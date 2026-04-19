@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>PEAK v9</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── SHARED / PICKER ── */
+
+#mode-picker { position:fixed; inset:0; background:#12131a; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:9999; }
+.mp-brand { font-family:'Montserrat',sans-serif; font-weight:900; font-size:3.5rem; letter-spacing:.22em; color:#ffee44; text-transform:uppercase; }
+.mp-sub { font-family:'Montserrat',sans-serif; font-weight:600; font-size:.78rem; letter-spacing:.2em; text-transform:uppercase; color:#aaaaaa; margin-top:-10px; margin-bottom:8px; }
+.mp-btn { width:280px; padding:16px 20px; border:none; border-radius:10px; cursor:pointer; font-family:'Montserrat',sans-serif; font-weight:800; font-size:1rem; letter-spacing:.1em; text-transform:uppercase; transition:all .15s; text-align:left; display:flex; align-items:center; gap:14px; }
+.mp-icon { font-size:1.4rem; flex-shrink:0; }
+.mp-label { display:flex; flex-direction:column; gap:2px; }
+.mp-name { font-size:.92rem; }
+.mp-desc { font-size:.6rem; font-weight:600; letter-spacing:.06em; opacity:.65; text-transform:none; }
+.mp-coach  { background:#ffee44; color:#000; }
+.mp-member { background:#1e2430; color:#4da6ff; border:2px solid #4da6ff; }
+.mp-tv     { background:#1a1a1a; color:#888; border:2px solid #2a2a2a; }
+#view-coach  { display:none; background:#12131a; min-height:100vh; }
+#view-member { display:none; background:#12131a; min-height:100vh; max-width:500px; margin:0 auto; }
+#view-tv     { display:none; background:#12131a; height:100vh; overflow:hidden; flex-direction:column; }
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#12131a; --surface:#0e0f15; --row:#16171f; --border:#1e1e2a;
+  --text:#ffffff; --soft:#aaaaaa; --dim:#8888aa;
+  --yellow:#ffee44; --green:#44ee88; --orange:#ff9933; --red:#ff4444;
+  --ta:#4da6ff; --tb:#ff6688; --tc:#55ee99; --td:#ffcc44; --te:#cc88ff;
+}
+
+/* ── COACH VIEW ── */
+body { background:var(--bg); color:var(--text); font-family:'Montserrat',sans-serif; min-height:100vh; padding-bottom:60px; }
+#view-coach .topbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:12px 20px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+#view-coach .brand { font-weight:900; font-size:1.3rem; letter-spacing:.18em; color:var(--yellow); text-transform:uppercase; }
+#view-coach .live-ind { display:flex; align-items:center; gap:7px; font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--green); }
+#view-coach .ldot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 1.5s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ── LIVE PHASE STRIP at top ── */
+.phase-now {
+  background:var(--surface); border-bottom:2px solid var(--border);
+  padding:10px 20px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:53px; z-index:49;
+}
+#view-coach .pn-phase { font-weight:800; font-size:.75rem; letter-spacing:.16em; text-transform:uppercase; color:#fff; }
+#view-coach .pn-timer { font-weight:900; font-size:1.6rem; color:var(--yellow); letter-spacing:.04em; line-height:1; }
+#view-coach .pn-next { font-size:.62rem; color:var(--dim); font-weight:600; letter-spacing:.08em; }
+#view-coach .pn-controls { display:flex; gap:0; }
+#view-coach .pn-btn {
+  padding:8px 14px; border:none; cursor:pointer; font-family:'Montserrat',sans-serif;
+  font-weight:700; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; transition:all .15s;
+}
+#view-coach .pn-btn.play { background:var(--yellow); color:#000; border-radius:6px 0 0 6px; min-width:72px; }
+#view-coach .pn-btn.play:hover { background:#e0d83a; }
+#view-coach .pn-btn.skip { background:var(--row); color:var(--soft); border-radius:0; border-left:1px solid var(--border); }
+#view-coach .pn-btn.skip:hover { color:#fff; background:#222; }
+#view-coach .pn-btn.back { background:var(--row); color:var(--soft); border-radius:0 6px 6px 0; border-left:1px solid var(--border); }
+#view-coach .pn-btn.back:hover { color:#fff; background:#222; }
+
+/* ── TABS ── */
+.tabs { display:flex; background:var(--surface); border-bottom:1px solid var(--border); }
+#view-coach .tab {
+  flex:1; padding:11px 6px; text-align:center;
+  font-weight:700; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--dim); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s;
+}
+#view-coach .tab.on { color:var(--yellow); border-color:var(--yellow); }
+#view-coach .sec { display:none; }
+#view-coach .sec.on { display:block; }
+#view-coach .sec-title {
+  font-weight:800; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--dim); padding:16px 20px 8px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+}
+
+/* ── FIELD ROWS ── */
+.field-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+#view-coach .field-lbl { font-weight:600; font-size:.88rem; color:var(--text); }
+#view-coach .field-sub { font-size:.7rem; color:var(--soft); margin-top:2px; }
+#view-coach .field-row.stacked { flex-direction:column; align-items:stretch; gap:8px; }
+#view-coach input[type=text], #view-coach input[type=number], #view-coach select {
+  background:var(--row); border:1px solid var(--border); border-radius:6px;
+  color:#fff; font-family:'Montserrat',sans-serif;
+  font-size:.9rem; font-weight:600; padding:8px 12px; outline:none; transition:border-color .2s;
+}
+#view-coach input[type=text] { width:200px; }
+#view-coach input[type=number] { width:70px; text-align:center; }
+#view-coach select { width:160px; font-size:.8rem; }
+#view-coach input:focus, #view-coach select:focus { border-color:var(--yellow); }
+#view-coach .field-row.stacked input { width:100%; text-align:left; }
+#view-coach select option { background:var(--row); }
+
+/* ── PHASE SCHEDULE TABLE ── */
+.phase-schedule { border-bottom:1px solid var(--border); }
+#view-coach .ps-row {
+  display:grid; grid-template-columns:1fr 70px 36px;
+  align-items:center; padding:11px 20px;
+  border-bottom:1px solid var(--border); background:var(--bg); gap:8px;
+}
+#view-coach .ps-row.current { background:rgba(255,238,68,.05); border-left:3px solid var(--yellow); }
+#view-coach .ps-row.done { opacity:.4; }
+#view-coach .ps-name { font-weight:700; font-size:.88rem; color:#fff; }
+#view-coach .ps-dur { font-weight:700; font-size:.88rem; color:var(--soft); text-align:right; }
+#view-coach .ps-edit {
+  width:28px; height:28px; background:var(--row); border:1px solid var(--border);
+  border-radius:5px; color:var(--dim); cursor:pointer; font-size:.7rem;
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+#view-coach .ps-edit:hover { border-color:var(--yellow); color:var(--yellow); }
+
+/* ── GO LIVE ── */
+.go-live-row { padding:16px 20px; border-bottom:1px solid var(--border); }
+#view-coach .go-live-btn {
+  width:100%; padding:15px; background:var(--green); color:#000;
+  border:none; border-radius:8px; font-family:'Montserrat',sans-serif;
+  font-weight:800; font-size:.95rem; letter-spacing:.1em; text-transform:uppercase;
+  cursor:pointer; transition:all .15s;
+}
+#view-coach .go-live-btn:hover { background:#38d478; }
+#view-coach .end-btn {
+  width:100%; padding:11px; background:transparent; color:var(--red);
+  border:1px solid #2a1515; border-radius:8px; font-family:'Montserrat',sans-serif;
+  font-weight:700; font-size:.75rem; letter-spacing:.1em; text-transform:uppercase;
+  cursor:pointer; margin-top:9px; transition:all .15s;
+}
+
+/* ── SCORE TAB ── */
+.block-toggle { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border); }
+#view-coach .btog {
+  padding:12px; text-align:center; cursor:pointer;
+  font-weight:700; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--dim); border-right:1px solid var(--border); transition:all .2s; background:var(--bg);
+}
+#view-coach .btog:last-child { border-right:none; }
+#view-coach .btog.on { color:var(--yellow); background:rgba(255,238,68,.05); }
+#view-coach .team-stripe-hdr {
+  display:flex; align-items:center; padding:9px 20px;
+  background:var(--surface); border-bottom:1px solid var(--border); border-left:3px solid;
+}
+#view-coach .tsh-name { font-weight:800; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; }
+#view-coach .tsh-total { font-size:.68rem; font-weight:600; color:var(--soft); margin-left:auto; }
+#view-coach .tsh-total strong { color:#fff; font-weight:700; }
+#view-coach .cap-log-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+#view-coach .cap-log-row.push-warn { background:rgba(255,153,51,.05); border-left:3px solid var(--orange); }
+#view-coach .cl-who { font-weight:700; font-size:.9rem; color:#fff; }
+#view-coach .cl-warn { font-size:.68rem; color:var(--orange); font-weight:700; margin-top:2px; }
+#view-coach .cl-controls { display:flex; align-items:center; gap:0; }
+#view-coach .cl-minus, #view-coach .cl-plus {
+  width:42px; height:42px; border:none; cursor:pointer;
+  font-size:1.3rem; font-weight:700; font-family:'Montserrat',sans-serif;
+  display:flex; align-items:center; justify-content:center; transition:all .12s;
+}
+#view-coach .cl-minus { background:var(--row); color:var(--soft); border-radius:8px 0 0 8px; }
+#view-coach .cl-minus:hover { color:var(--red); }
+#view-coach .cl-plus { background:var(--yellow); color:#000; border-radius:0 8px 8px 0; }
+#view-coach .cl-plus:active { transform:scale(.94); }
+#view-coach .cl-val {
+  min-width:48px; height:42px; background:var(--row);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:1.3rem; color:#fff;
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+}
+#view-coach .ovr-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 20px; border-bottom:1px solid var(--border); background:rgba(255,153,51,.03);
+}
+#view-coach .ovr-mname { font-size:.88rem; font-weight:700; color:#fff; }
+#view-coach .ovr-cap { font-size:.58rem; color:var(--yellow); font-weight:700; margin-left:6px; }
+#view-coach .stepper { display:flex; align-items:center; }
+#view-coach .sp-btn {
+  width:30px; height:30px; background:var(--row); border:1px solid var(--border);
+  color:#fff; font-size:.95rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+#view-coach .sp-btn:first-child { border-radius:6px 0 0 6px; }
+#view-coach .sp-btn:last-child { border-radius:0 6px 6px 0; }
+#view-coach .sp-btn:hover { background:var(--yellow); color:#000; border-color:var(--yellow); }
+#view-coach .sp-val {
+  min-width:34px; height:30px; background:var(--row);
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:.95rem; color:#fff;
+}
+
+/* ── MEMBERS TAB ── */
+.member-row-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+#view-coach .mri-name { font-weight:700; font-size:.92rem; color:#fff; }
+#view-coach .mri-badge {
+  display:inline-block; padding:1px 8px; border-radius:12px;
+  font-size:.58rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-left:7px;
+}
+#view-coach .mri-meta { font-size:.7rem; color:var(--soft); margin-top:3px; font-weight:500; }
+#view-coach .del-btn {
+  width:28px; height:28px; border-radius:6px; border:1px solid var(--border);
+  background:var(--row); color:var(--dim); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:.8rem; transition:all .15s;
+}
+#view-coach .del-btn:hover { border-color:var(--red); color:var(--red); }
+#view-coach .add-form-header {
+  padding:16px 20px 8px; font-weight:800; font-size:.65rem; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--dim); background:var(--surface); border-bottom:1px solid var(--border);
+}
+#view-coach .add-action-row { padding:14px 20px; border-bottom:1px solid var(--border); background:var(--bg); }
+#view-coach .add-btn {
+  width:100%; padding:12px; background:var(--yellow); color:#000; border:none; border-radius:7px;
+  font-family:'Montserrat',sans-serif; font-weight:800; font-size:.8rem; letter-spacing:.12em;
+  text-transform:uppercase; cursor:pointer; transition:all .15s;
+}
+#view-coach .add-btn:hover { background:#e0d83a; }
+
+/* ── PROGRAM TAB ── */
+.prog-intro {
+  padding:14px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+  font-size:.82rem; color:var(--soft); font-weight:500; line-height:1.6;
+}
+#view-coach .prog-block {
+  border-bottom:2px solid var(--border);
+}
+#view-coach .prog-phase-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; background:var(--surface); border-top:2px solid var(--border);
+  position:sticky; top:106px; z-index:10;
+}
+#view-coach .pph-name { font-weight:800; font-size:.88rem; color:#fff; letter-spacing:.04em; }
+#view-coach .pph-dur { font-weight:700; font-size:.82rem; color:var(--yellow); }
+#view-coach .prog-ex-section { background:var(--bg); }
+#view-coach .prog-ex-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px; border-bottom:1px solid var(--border);
+}
+#view-coach .prog-ex-num {
+  font-size:.72rem; font-weight:800; color:var(--dim);
+  width:18px; flex-shrink:0; text-align:center;
+}
+#view-coach .prog-ex-input {
+  flex:1; background:var(--row); border:1px solid var(--border); border-radius:6px;
+  color:#fff; font-family:'Montserrat',sans-serif; font-size:.85rem; font-weight:500;
+  padding:8px 12px; outline:none; transition:border-color .2s;
+}
+#view-coach .prog-ex-input:focus { border-color:var(--yellow); }
+#view-coach .prog-ex-del {
+  width:28px; height:28px; background:transparent; border:1px solid var(--border);
+  border-radius:5px; color:var(--dim); cursor:pointer; font-size:.7rem;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:all .15s;
+}
+#view-coach .prog-ex-del:hover { border-color:var(--red); color:var(--red); }
+#view-coach .prog-add-ex-btn {
+  margin:10px 20px 12px; padding:7px 16px;
+  background:transparent; border:1px dashed var(--border); border-radius:6px;
+  color:var(--soft); font-family:'Montserrat',sans-serif; font-weight:700;
+  font-size:.72rem; letter-spacing:.08em; cursor:pointer; transition:all .15s;
+  display:block;
+}
+#view-coach .prog-add-ex-btn:hover { border-color:var(--yellow); color:var(--yellow); }
+#view-coach .prog-field-row {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  padding:11px 20px; border-bottom:1px solid var(--border); gap:10px;
+}
+#view-coach .prog-field-lbl { font-size:.78rem; font-weight:600; color:var(--soft); white-space:nowrap; padding-top:2px; min-width:80px; }
+#view-coach textarea {
+  background:var(--row); border:1px solid var(--border); border-radius:6px;
+  color:#fff; font-family:'Montserrat',sans-serif; font-size:.82rem; font-weight:500;
+  padding:8px 10px; outline:none; resize:vertical; width:100%;
+  line-height:1.5; transition:border-color .2s;
+}
+#view-coach textarea:focus { border-color:var(--yellow); }
+#view-coach .prog-push-row {
+  padding:14px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+#view-coach .prog-push-btn {
+  width:100%; padding:12px; background:var(--yellow); color:#000; border:none; border-radius:7px;
+  font-family:'Montserrat',sans-serif; font-weight:800; font-size:.8rem; letter-spacing:.12em;
+  text-transform:uppercase; cursor:pointer;
+}
+
+/* ── FOOTER (light) ── */
+.coach-footer {
+  background:#e8e8e0; padding:12px 20px; margin-top:20px;
+  display:flex; align-items:center; gap:10px;
+}
+#view-coach .cf-tag { font-weight:800; font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; color:#000; white-space:nowrap; }
+#view-coach .cf-msg { font-size:.78rem; font-weight:600; color:#999999; }
+#view-coach .toast {
+  position:fixed; bottom:22px; left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--green); color:#000; font-weight:700; font-size:.78rem;
+  padding:10px 24px; border-radius:24px; transition:transform .3s;
+  z-index:200; letter-spacing:.08em; text-transform:uppercase; font-family:'Montserrat',sans-serif;
+}
+#view-coach .toast.show { transform:translateX(-50%) translateY(0); }
+#view-coach * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+
+/* ── MEMBER VIEW ── */
+
+
+/* ── TOP BAR ── */
+.topbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+#view-member .brand { font-weight:900; font-size:1.4rem; letter-spacing:.18em; color:var(--yellow); text-transform:uppercase; }
+#view-member .conn { display:flex; align-items:center; gap:7px; font-size:.65rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+#view-member .cdot { width:8px; height:8px; border-radius:50%; }
+#view-member .cdot.live { background:var(--green); animation:blink 1.5s infinite; }
+#view-member .cdot.wait { background:var(--dim); }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── PICK SCREEN ── */
+#pick-screen { padding:30px 20px; }
+#view-member .pick-title { font-weight:900; font-size:1.5rem; color:#fff; letter-spacing:.04em; margin-bottom:6px; }
+#view-member .pick-sub { font-size:.82rem; color:var(--soft); font-weight:500; margin-bottom:24px; }
+#view-member .pick-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:15px 20px; border-bottom:1px solid var(--border);
+  cursor:pointer; transition:background .15s; border-left:3px solid transparent;
+}
+#view-member .pick-row:first-child { border-top:1px solid var(--border); }
+#view-member .pick-row:hover { background:var(--row); }
+#view-member .pr-left { display:flex; align-items:center; gap:12px; }
+#view-member .pr-av {
+  width:38px; height:38px; border-radius:50%;
+  border:2px solid; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:.82rem;
+}
+#view-member .pr-name { font-weight:700; font-size:.95rem; color:#fff; }
+#view-member .pr-sub { font-size:.68rem; color:var(--soft); margin-top:2px; font-weight:500; }
+#view-member .pr-badge {
+  font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  padding:2px 9px; border-radius:12px;
+}
+
+/* ── MEMBER VIEW ── */
+#member-view { display:none; }
+
+/* section title (same as coach) */
+.sec-title {
+  font-weight:800; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--dim); padding:16px 20px 8px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+}
+
+/* greeting row */
+.greeting-row {
+  padding:18px 20px; border-bottom:1px solid var(--border);
+  border-left:4px solid transparent; background:var(--bg);
+}
+#view-member .g-name { font-weight:800; font-size:1.4rem; color:#fff; line-height:1.2; }
+#view-member .g-team { font-size:.72rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-top:4px; }
+#view-member .g-cap { font-size:.65rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--yellow); margin-top:3px; }
+
+/* stat rows — no boxes, just rows */
+.stat-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:15px 20px; border-bottom:1px solid var(--border);
+  background:var(--bg);
+}
+#view-member .stat-lbl { font-weight:600; font-size:.88rem; color:var(--soft); }
+#view-member .stat-val { font-weight:800; font-size:1.2rem; color:#fff; }
+#view-member .stat-val.yellow { color:var(--yellow); font-size:1.5rem; }
+
+/* progress row */
+.progress-row {
+  padding:14px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+#view-member .prog-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+#view-member .prog-lbl { font-weight:600; font-size:.8rem; color:var(--soft); }
+#view-member .prog-frac { font-weight:800; font-size:.95rem; color:#fff; }
+#view-member .prog-track { background:var(--row); border-radius:4px; height:10px; overflow:hidden; }
+#view-member .prog-fill { height:100%; border-radius:4px; background:var(--green); transition:width .5s ease; }
+#view-member .prog-fill.warn { background:var(--orange); }
+#view-member .prog-note { font-size:.72rem; font-weight:600; color:var(--soft); margin-top:6px; }
+#view-member .prog-note.good { color:var(--green); }
+#view-member .prog-note.warn { color:var(--orange); }
+
+/* block score rows */
+.block-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:15px 20px; border-bottom:1px solid var(--border);
+  background:var(--bg); border-left:3px solid var(--border); transition:border-color .3s;
+}
+#view-member .block-row.current { border-left-color:var(--yellow); }
+#view-member .bl-left {}
+#view-member .bl-label { font-weight:700; font-size:.88rem; color:#fff; }
+#view-member .bl-sub { font-size:.68rem; color:var(--soft); font-weight:500; margin-top:2px; }
+#view-member .block-pill {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:64px; padding:6px 14px; border-radius:6px;
+  font-weight:800; font-size:1.1rem;
+  background:var(--row); color:var(--dim);
+}
+#view-member .block-pill.ahead { background:#1a3d28; color:var(--green); }
+#view-member .block-pill.on-track { background:#332d00; color:var(--yellow); }
+#view-member .block-pill.behind { background:#3a1e00; color:var(--orange); }
+
+/* ── ROUND ADJUSTER ── */
+.adj-btn {
+  width:44px; height:44px; border:none; cursor:pointer;
+  font-size:1.5rem; font-weight:700; font-family:'Montserrat',sans-serif;
+  display:flex; align-items:center; justify-content:center; transition:all .12s;
+  flex-shrink:0;
+}
+#view-member .adj-btn.minus { background:var(--row); color:var(--soft); border-radius:8px 0 0 8px; }
+#view-member .adj-btn.minus:hover { color:var(--red); }
+#view-member .adj-btn.plus { background:var(--yellow); color:#000; border-radius:0 8px 8px 0; }
+#view-member .adj-btn.plus:active { transform:scale(.94); }
+#view-member .adj-val {
+  min-width:52px; height:44px;
+  background:var(--row); border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:1.3rem; color:#fff;
+}
+
+/* teammates rows */
+.teammate-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 20px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+#view-member .tm-left { display:flex; align-items:center; gap:11px; }
+#view-member .tm-av {
+  width:34px; height:34px; border-radius:50%;
+  border:2px solid; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:.78rem;
+}
+#view-member .tm-name { font-weight:700; font-size:.9rem; color:#fff; }
+#view-member .tm-you { font-size:.6rem; color:var(--soft); font-weight:600; margin-left:5px; }
+#view-member .tm-cap-tag { font-size:.6rem; color:var(--yellow); font-weight:700; display:block; margin-top:1px; }
+#view-member .tm-score { font-weight:800; font-size:1.1rem; color:#fff; }
+#view-member .tm-score .of { font-size:.72rem; color:var(--dim); font-weight:600; }
+
+/* waiting */
+.not-live-row {
+  padding:48px 20px; text-align:center;
+  border-bottom:1px solid var(--border);
+}
+#view-member .nl-msg { font-weight:700; font-size:1rem; color:var(--dim); letter-spacing:.04em; }
+
+/* change user */
+.change-row {
+  padding:14px 20px; text-align:center;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+#view-member .change-btn {
+  font-size:.72rem; font-weight:700; color:var(--dim);
+  letter-spacing:.1em; text-transform:uppercase;
+  cursor:pointer; background:none; border:none;
+  font-family:'Montserrat',sans-serif;
+}
+#view-member .change-btn:hover { color:var(--soft); }
+
+/* ── FOOTER (light) ── */
+.member-footer {
+  background:#e8e8e0; padding:14px 20px;
+  display:flex; align-items:center; gap:10px; margin-top:8px;
+}
+#view-member .mf-tag { font-weight:800; font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:#000; white-space:nowrap; }
+#view-member .mf-msg { font-size:.78rem; font-weight:600; color:#999999; }
+#view-member * { margin:0; padding:0; box-sizing:border-box; }
+
+
+/* ── TV VIEW ── */
+
+
+/* ── HEADER ── */
+.hdr {
+  display:grid; grid-template-columns:1fr auto 1fr;
+  align-items:center; padding:14px 48px;
+  background:#12131a; border-bottom:1px solid #1e1e2a; flex-shrink:0;
+}
+#view-tv .brand { font-weight:900; font-size:1.8rem; letter-spacing:.22em; color:#ffee44; text-transform:uppercase; }
+#view-tv .hcenter { text-align:center; }
+#view-tv .class-name { font-weight:800; font-size:1.2rem; letter-spacing:.18em; text-transform:uppercase; color:#fff; }
+#view-tv .phase-tag {
+  display:inline-block; margin-top:5px; background:#ffee44; color:#000;
+  font-weight:800; font-size:.65rem; letter-spacing:.16em; text-transform:uppercase;
+  padding:3px 14px; border-radius:20px;
+}
+/* Timer corner */
+.timer-corner { text-align:right; }
+#view-tv .tc-phase { font-size:.6rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#aaaaaa; }
+#view-tv .tc-time { font-weight:900; font-size:2.6rem; color:#ffee44; line-height:1; letter-spacing:.02em; }
+#view-tv .tc-next { font-size:.58rem; font-weight:600; color:#5a5a7a; margin-top:2px; }
+
+/* ── PHASE STRIP ── */
+.phase-strip { display:flex; background:#0e0f15; border-bottom:1px solid #1a1a2a; flex-shrink:0; }
+#view-tv .ps {
+  flex:1; text-align:center; padding:8px;
+  font-weight:700; font-size:.62rem; letter-spacing:.16em; text-transform:uppercase;
+  color:#3a3a60; position:relative; transition:color .3s;
+}
+#view-tv .ps.active { color:#ffee44; }
+#view-tv .ps.active::after { content:''; position:absolute; bottom:0; left:15%; right:15%; height:2px; background:#ffee44; }
+#view-tv .ps.done { color:#2a2a45; }
+
+/* ── COL HEADERS ── */
+.thead {
+  display:grid; grid-template-columns: 4px 52px 1fr 110px 110px 90px 90px 52px;
+  padding:9px 0 7px; background:#0e0f15; border-bottom:1px solid #1a1a2a; flex-shrink:0;
+}
+#view-tv .th { font-weight:700; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:#5a5a7a; text-align:center; padding:0 8px; }
+#view-tv .th.left { text-align:left; }
+
+/* ── SCROLL ── */
+.scroll { flex:1; overflow-y:auto; }
+
+/* team label row */
+.team-label-row { display:grid; grid-template-columns:4px 1fr auto; align-items:center; padding:7px 0; background:#0c0d13; border-top:1px solid #1a1a28; }
+#view-tv .tl-stripe { height:100%; width:4px; }
+#view-tv .tl-name { font-weight:800; font-size:.7rem; letter-spacing:.22em; text-transform:uppercase; padding-left:66px; }
+#view-tv .tl-total { font-weight:600; font-size:.65rem; color:#6a6a8a; letter-spacing:.1em; text-transform:uppercase; padding-right:48px; }
+#view-tv .tl-total strong { color:#888888; font-weight:700; }
+
+/* member row */
+.mrow {
+  display:grid; grid-template-columns: 4px 52px 1fr 110px 110px 90px 90px 52px;
+  align-items:center; min-height:62px; border-bottom:1px solid #14141e; background:#0e0f15;
+}
+#view-tv .mrow:nth-child(even) { background:#111219; }
+#view-tv .mstripe { height:100%; width:4px; }
+#view-tv .mav-wrap { display:flex; align-items:center; justify-content:center; }
+#view-tv .mav { width:36px; height:36px; border-radius:50%; border:2px solid; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.8rem; }
+#view-tv .mname-wrap { padding:0 0 0 14px; }
+#view-tv .mname { font-weight:700; font-size:1rem; color:#ffffff; letter-spacing:.01em; }
+#view-tv .mcap { font-size:.58rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#ffee44; margin-top:1px; }
+#view-tv .cell-lw { text-align:center; padding:0 8px; }
+#view-tv .lw-val { font-weight:700; font-size:1.3rem; color:#7a7a99; }
+#view-tv .lw-lbl { font-size:.52rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#5a5a7a; margin-top:1px; }
+#view-tv .cell-tgt { text-align:center; padding:0 8px; }
+#view-tv .tgt-val { font-weight:900; font-size:1.5rem; color:#ffee44; }
+#view-tv .tgt-lbl { font-size:.52rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,238,68,.5); margin-top:1px; }
+#view-tv .cell-score { text-align:center; padding:0 8px; }
+#view-tv .score-bar {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:64px; padding:5px 12px; border-radius:6px;
+  font-weight:800; font-size:1rem; background:#1a1a28; color:#5a5a7a;
+}
+#view-tv .score-bar.ahead { background:#1a3d28; color:var(--green); }
+#view-tv .score-bar.on-track { background:#332d00; color:var(--yellow); }
+#view-tv .score-bar.behind { background:#3a1e00; color:var(--orange); }
+#view-tv .score-sub { font-size:.52rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#5a5a7a; margin-top:3px; }
+#view-tv .score-bar.ahead    ~ .score-sub { color:rgba(68,238,136,.55); }
+#view-tv .score-bar.on-track ~ .score-sub { color:rgba(255,204,68,.55); }
+#view-tv .score-bar.behind   ~ .score-sub { color:rgba(255,153,51,.55); }
+#view-tv .cell-done { display:flex; align-items:center; justify-content:center; }
+#view-tv .done-ring { width:28px; height:28px; border-radius:50%; border:2px solid #222; }
+#view-tv .done-tick { width:28px; height:28px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; color:#000; font-size:.85rem; font-weight:800; }
+
+/* ── DEMO OVERLAY ── shown during demo phase ── */
+.demo-view { flex:1; overflow-y:auto; display:none; }
+#view-tv .demo-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+#view-tv .demo-cell { padding:22px 32px; border-bottom:1px solid #1a1a2a; border-right:1px solid #1a1a2a; }
+#view-tv .demo-cell:nth-child(even) { border-right:none; }
+#view-tv .demo-phase-name { font-weight:800; font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; color:#aaaaaa; margin-bottom:10px; }
+#view-tv .demo-focus { font-weight:800; font-size:1.1rem; color:#fff; margin-bottom:8px; }
+#view-tv .demo-exercises { display:flex; flex-direction:column; gap:4px; }
+#view-tv .demo-ex { font-size:.9rem; font-weight:600; color:#888; }
+#view-tv .demo-cues { margin-top:10px; font-size:.8rem; color:#999999; font-weight:500; font-style:italic; line-height:1.5; }
+
+/* ── FOOTER ── */
+.footer { flex-shrink:0; background:#e8e8e0; padding:11px 48px; display:flex; align-items:center; gap:14px; }
+#view-tv .f-tag { font-weight:800; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:#000; white-space:nowrap; }
+#view-tv .f-msg { font-weight:600; font-size:.85rem; color:#999999; }
+
+/* waiting */
+#view-tv #waiting { position:fixed; inset:0; background:#12131a; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:99; }
+#view-tv .wb { font-weight:900; font-size:6rem; letter-spacing:.24em; color:#ffee44; text-transform:uppercase; }
+#view-tv .ws { font-size:.9rem; font-weight:600; color:#5a5a7a; letter-spacing:.2em; text-transform:uppercase; }
+#view-tv .wd { width:10px; height:10px; border-radius:50%; background:#ffee44; animation:blink 1.5s ease-in-out infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
+#view-tv .popped { animation:pop .35s ease-out; }
+
+}
+
+</style>
+</head>
+<body style="margin:0;padding:0;background:#12131a;">
+
+<div id="mode-picker">
+  <div class="mp-brand">PEAK</div>
+  <div class="mp-sub">Select your view</div>
+  <div style="font-family:monospace;font-size:.6rem;color:#7a7a99;margin-top:-12px;">v9</div>
+  <button class="mp-btn mp-coach"  onclick="setMode('coach')">
+    <span class="mp-icon">📋</span>
+    <div class="mp-label"><span class="mp-name">Coach</span><span class="mp-desc">Timer · scores · program · teams</span></div>
+  </button>
+  <button class="mp-btn mp-member" onclick="setMode('member')">
+    <span class="mp-icon">👤</span>
+    <div class="mp-label"><span class="mp-name">Member</span><span class="mp-desc">Your scores and team</span></div>
+  </button>
+  <button class="mp-btn mp-tv"     onclick="setMode('tv')">
+    <span class="mp-icon">📺</span>
+    <div class="mp-label"><span class="mp-name">TV Display</span><span class="mp-desc">Class leaderboard for big screen</span></div>
+  </button>
+</div>
+
+<div id="view-coach"><div class="topbar">
+  <div class="brand">PEAK</div>
+  <div class="live-ind"><span class="ldot"></span>Coach View</div>
+</div>
+
+<!-- STICKY PHASE TIMER -->
+<div class="phase-now" id="phase-now">
+  <div>
+    <div class="pn-phase" id="pn-phase">Get Ready</div>
+    <div class="pn-next" id="pn-next">Next: Warm-Up</div>
+  </div>
+  <div class="pn-timer" id="pn-timer">–:––</div>
+  <div class="pn-controls">
+    <button class="pn-btn back" onclick="skipPhase(-1)" title="Previous phase">◀</button>
+    <button class="pn-btn play" id="pn-play" onclick="togTimer()">▶ Start</button>
+    <button class="pn-btn skip" onclick="skipPhase(1)" title="Next phase">▶▶</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on"  onclick="go('setup')">Setup</div>
+  <div class="tab"     onclick="go('scores')">Scores</div>
+  <div class="tab"     onclick="go('program')">Program</div>
+  <div class="tab"     onclick="go('members')">Teams</div>
+</div>
+
+<!-- ══ SETUP ══ -->
+<div class="sec on" id="sec-setup">
+  <div class="sec-title">Class Info</div>
+  <div class="field-row stacked">
+    <div class="field-lbl">Class name</div>
+    <input type="text" id="cls-name" value="Endurance" oninput="push()">
+  </div>
+  <div class="field-row stacked">
+    <div class="field-lbl">Footer message</div>
+    <input type="text" id="footer-msg" value="Find a partner whose target is +/- 2 rounds from yours!" oninput="push()">
+  </div>
+
+  <div class="sec-title">Phase Schedule</div>
+  <div class="phase-schedule" id="phase-schedule"></div>
+
+  <div class="go-live-row">
+    <button class="go-live-btn" id="start-btn" onclick="startClass()">🚀  Start Class — Go Live</button>
+    <button class="end-btn" onclick="endClass()">End Class</button>
+  </div>
+  <div class="coach-footer">
+    <div class="cf-tag">Get Ready</div>
+    <div class="cf-msg" id="footer-preview">Find a partner whose target is +/- 2 rounds from yours!</div>
+  </div>
+</div>
+
+<!-- ══ SCORES ══ -->
+<div class="sec" id="sec-scores">
+  <div class="block-toggle">
+    <div class="btog on" data-b="b1" onclick="setSB('b1',this)">Block 1</div>
+    <div class="btog"    data-b="b2" onclick="setSB('b2',this)">Block 2</div>
+  </div>
+  <div id="score-content"></div>
+</div>
+
+<!-- ══ PROGRAM ══ -->
+<div class="sec" id="sec-program">
+  <div class="prog-intro">
+    What participants will see and do in each phase. Shown on the TV during the Demo phase.
+  </div>
+  <div id="prog-blocks"></div>
+  <div class="prog-push-row">
+    <button class="prog-push-btn" onclick="pushProg()">Update Display</button>
+  </div>
+</div>
+
+<!-- ══ MEMBERS ══ -->
+<div class="sec" id="sec-members">
+  <div class="sec-title">Registered Members</div>
+  <div id="members-list"></div>
+  <div class="add-form-header">+ Add Member</div>
+  <div class="field-row">
+    <div class="field-lbl">Initials</div>
+    <input type="text" id="n-id" placeholder="PD" maxlength="4" style="width:70px;text-align:center;">
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">Full name</div>
+    <input type="text" id="n-name" placeholder="Pat Doe">
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">Last week (rounds)</div>
+    <input type="number" id="n-last" placeholder="12" min="0">
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">Target today (rounds)</div>
+    <input type="number" id="n-target" placeholder="13" min="0">
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">Team</div>
+    <select id="n-team">
+      <option value="A">Team A</option>
+      <option value="B">Team B</option>
+      <option value="C">Team C</option>
+      <option value="D">Team D</option>
+      <option value="E">Team E</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">Role</div>
+    <select id="n-role">
+      <option value="member">Member</option>
+      <option value="captain">Captain</option>
+    </select>
+  </div>
+  <div class="add-action-row">
+    <button class="add-btn" onclick="addMember()">+ Add to Class</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved!</div></div>
+<div id="view-member"><div class="topbar">
+  <div class="brand">PEAK</div>
+  <div class="conn" id="conn">
+    <div class="cdot wait" id="cdot"></div>
+    <span id="ctxt" style="color:var(--dim);">Waiting</span>
+  </div>
+</div>
+
+<!-- PICK SCREEN -->
+<div id="pick-screen">
+  <div class="pick-title">Who are you?</div>
+  <div class="pick-sub">Tap your name to join the class</div>
+  <div id="pick-list">
+    <div style="padding:30px 20px;text-align:center;font-size:.85rem;color:var(--dim);font-weight:600;">Waiting for class to load...</div>
+  </div>
+</div>
+
+<!-- MEMBER VIEW -->
+<div id="member-view">
+  <div class="not-live-row" id="not-live" style="display:none;">
+    <div class="nl-msg">Class hasn't started yet — stand by!</div>
+  </div>
+  <div id="live-content" style="display:none;"></div>
+  <div class="change-row">
+    <button class="change-btn" onclick="changeMember()">Not you? Switch member</button>
+  </div>
+</div></div>
+<div id="view-tv"><div id="waiting">
+  <div class="wb">PEAK</div>
+  <div class="ws">Waiting for coach to start</div>
+  <div class="wd"></div>
+</div>
+
+<div id="app" style="display:none;flex-direction:column;height:100vh;">
+  <div class="hdr">
+    <div class="brand">PEAK</div>
+    <div class="hcenter">
+      <div class="class-name" id="h-name">Endurance</div>
+      <div class="phase-tag" id="h-phase">Get Ready</div>
+    </div>
+    <div class="timer-corner">
+      <div class="tc-phase" id="tc-phase">GET READY</div>
+      <div class="tc-time" id="tc-time">–:––</div>
+      <div class="tc-next" id="tc-next"></div>
+    </div>
+  </div>
+
+  <div class="phase-strip" id="pstrip">
+    <div class="ps active" data-p="getready">Get Ready</div>
+    <div class="ps" data-p="warmup">Warm-Up</div>
+    <div class="ps" data-p="demo">Demo</div>
+    <div class="ps" data-p="power">Power</div>
+    <div class="ps" data-p="b1">Endurance 1</div>
+    <div class="ps" data-p="b2">Endurance 2</div>
+    <div class="ps" data-p="cooldown">Cool Down</div>
+  </div>
+
+  <!-- Leaderboard view (hidden during demo) -->
+  <div id="leaderboard-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="thead">
+      <div></div><div></div>
+      <div class="th left" style="padding-left:14px;">Member</div>
+      <div class="th">Last Week</div>
+      <div class="th">Target Today</div>
+      <div class="th">Block 1</div>
+      <div class="th">Block 2</div>
+      <div class="th">Done</div>
+    </div>
+    <div class="scroll" id="rows"></div>
+  </div>
+
+  <!-- Demo view -->
+  <div class="demo-view" id="demo-view">
+    <div class="demo-grid" id="demo-grid"></div>
+  </div>
+
+  <div class="footer">
+    <div class="f-tag">Get Ready</div>
+    <div class="f-msg" id="f-msg">Find a partner whose target is +/- 2 rounds from yours!</div>
+  </div>
+</div></div>
+
+<script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ── FIREBASE ──
+const FB_URL = 'https://peak-de845-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+async function fbSet(path, data) {
+  try {
+    const r = await fetch(FB_URL + '/' + path + '.json', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) { console.warn('fbSet HTTP error', r.status); }
+  } catch(e) {
+    console.warn('fbSet error', e);
+    // Show brief network error indicator if toast function exists
+    if (typeof toast === 'function') toast('⚠ Network error — retrying');
+    // Retry once after 2 seconds
+    setTimeout(function() {
+      fetch(FB_URL + '/' + path + '.json', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      }).catch(function() {});
+    }, 2000);
+  }
+}
+
+async function fbGet(path) {
+  try {
+    const r = await fetch(FB_URL + '/' + path + '.json');
+    if (!r.ok) { console.warn('fbGet HTTP error', r.status); return null; }
+    const data = await r.json();
+    // Firebase returns {"error":"..."} on auth failure - treat as null
+    if (data && data.error) { console.warn('fbGet Firebase error:', data.error); return null; }
+    return data;
+  } catch(e) { console.warn('fbGet error', e); return null; }
+}
+
+function fbListen(path, callback) {
+  let es = new EventSource(FB_URL + '/' + path + '.json');
+  function attach(source) {
+    source.addEventListener('put', function(e) {
+      try { const d = JSON.parse(e.data); if (d && d.data !== null) callback(d.data, 'put'); } catch(x) {}
+    });
+    source.addEventListener('patch', function(e) {
+      try { const d = JSON.parse(e.data); if (d && d.data !== null) callback(d.data, 'patch'); } catch(x) {}
+    });
+    source.onerror = function() {
+      // Connection dropped - close and reconnect after 3 seconds
+      try { source.close(); } catch(x) {}
+      setTimeout(function() {
+        es = new EventSource(FB_URL + '/' + path + '.json');
+        attach(es);
+        // Re-fetch current state after reconnect
+        fbGet(path).then(function(data) {
+          if (data) callback(data, 'put');
+        });
+      }, 3000);
+    };
+  }
+  attach(es);
+  // Return object with close method that works even after reconnects
+  return { close: function() { try { es.close(); } catch(x) {} } };
+}
+
+// ── FIREBASE DATA NORMALISER ──
+// Firebase converts JS arrays to {"0":{...},"1":{...}} objects.
+// Call this on every state received from Firebase before using it.
+function normaliseState(data) {
+  if (!data) return data;
+  // Restore participants array
+  if (data.participants && !Array.isArray(data.participants)) {
+    data.participants = Object.values(data.participants);
+  }
+  // Ensure each participant has b1/b2 keys (Firebase strips nulls)
+  if (Array.isArray(data.participants)) {
+    data.participants.forEach(function(p) {
+      if (!('b1' in p)) p.b1 = null;
+      if (!('b2' in p)) p.b2 = null;
+    });
+  }
+  // Restore phases array if stored
+  if (data.phases && !Array.isArray(data.phases)) {
+    data.phases = Object.values(data.phases);
+  }
+  return data;
+}
+
+
+// ── COACH ──
+
+const TCOLORS={A:'#4da6ff',B:'#ff6688',C:'#55ee99',D:'#ffcc44',E:'#cc88ff'};
+const TBGS={A:'rgba(77,166,255,.15)',B:'rgba(255,102,136,.15)',C:'rgba(85,238,153,.15)',D:'rgba(255,204,68,.15)',E:'rgba(204,136,255,.15)'};
+
+// ── PHASE DEFINITIONS ──
+// durations in seconds; editable by coach
+const DEFAULT_PHASES = [
+  { id:'getready',  label:'Get Ready',       dur:0,    phaseKey:'getready' },
+  { id:'warmup',    label:'Warm-Up',         dur:300,  phaseKey:'warmup'   },
+  { id:'demo',      label:'Demo',            dur:300,  phaseKey:'demo'     },
+  { id:'power',     label:'Power Block',     dur:600,  phaseKey:'power'    },
+  { id:'b1',        label:'Endurance 1',     dur:600,  phaseKey:'b1'       },
+  { id:'b2',        label:'Endurance 2',     dur:600,  phaseKey:'b2'       },
+  { id:'cooldown',  label:'Cool Down',       dur:300,  phaseKey:'cooldown' },
+];
+
+let phases = DEFAULT_PHASES.map(p=>({...p})); // always start fresh, restore from Firebase only
+let phaseIdx = 0;
+let tsec = phases[0].dur;
+let trun = false;
+let tInt = null;
+let sb = 'b1';
+
+let state = {
+  classStarted: false, className:'Endurance', classType:'endurance',
+  currentPhase:'getready', timerDisplay:'–:––', phaseLabel:'Get Ready',
+  footerMsg:'Find a partner whose target is +/- 2 rounds from yours!',
+  program: {},
+  participants:[
+    {id:'PD',name:'Pat D.',   team:'A',isCaptain:true, lastWeek:12,target:13,b1:null,b2:null},
+    {id:'MC',name:'Morgan C.',team:'A',isCaptain:false,lastWeek:13,target:14,b1:null,b2:null},
+    {id:'TN',name:'Taylor N.',team:'B',isCaptain:true, lastWeek:14,target:16,b1:null,b2:null},
+    {id:'MT',name:'Max T.',   team:'B',isCaptain:false,lastWeek:14,target:15,b1:null,b2:null},
+    {id:'YL',name:'Yael L.',  team:'C',isCaptain:true, lastWeek:16,target:17,b1:null,b2:null},
+    {id:'RS',name:'Robin S.', team:'C',isCaptain:false,lastWeek:11,target:12,b1:null,b2:null},
+  ]
+};
+
+// ── TABS ──
+function go(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  const ids=['setup','scores','program','members'];
+  const i=ids.indexOf(id);
+  document.querySelectorAll('.tab')[i].classList.add('on');
+  document.getElementById('sec-'+id).classList.add('on');
+  if(id==='scores')renderScores();
+  if(id==='members')renderMembers();
+  if(id==='program')renderProgram();
+  if(id==='setup')renderSchedule();
+}
+
+// ── PHASE TIMER ──
+function fmtSec(s){
+  const m=Math.floor(s/60),sec=s%60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function updTimerUI(){
+  const ph=phases[phaseIdx];
+  const _pnp=document.getElementById('pn-phase'); if(_pnp) _pnp.textContent=ph.label;
+  const next=phases[phaseIdx+1];
+  const _pnn=document.getElementById('pn-next'); if(_pnn) _pnn.textContent=next?`Next: ${next.label}`:'Last phase';
+  const _pnt=document.getElementById('pn-timer'); if(_pnt) _pnt.textContent=ph.dur>0?fmtSec(tsec):'–:––';
+  const _pnpl=document.getElementById('pn-play'); if(_pnpl) _pnpl.textContent=trun?'⏸ Pause':'▶ Start';
+  // sync state
+  state.currentPhase=ph.phaseKey;
+  state.phaseLabel=ph.label;
+  state.timerDisplay=ph.dur>0?fmtSec(tsec):'–:––';
+  const nextPh=phases[phaseIdx+1];
+  state.nextPhaseLabel=nextPh?nextPh.label:'';
+  // Auto-switch score block to match current phase
+  if(ph.phaseKey==='b1'||ph.phaseKey==='b2'){
+    sb=ph.phaseKey;
+    document.querySelectorAll('.btog').forEach(el=>el.classList.toggle('on',el.dataset.b===sb));
+    if(document.getElementById('score-content')) renderScores();
+  }
+  if(document.getElementById('phase-schedule')) renderSchedule();
+  pushTimer();
+}
+
+function togTimer(){
+  if(phases[phaseIdx].phaseKey==='getready'){
+    // Get Ready: play button does nothing — coach uses Start Class or skip
+    return;
+  }
+  if(trun){
+    clearInterval(tInt); trun=false;
+  } else {
+    trun=true;
+    tInt=setInterval(()=>{
+      if(tsec>0){
+        tsec--;
+        updTimerUI();
+      } else {
+        advancePhase();
+      }
+    },1000);
+  }
+  updTimerUI();
+}
+
+function advancePhase(){
+  clearInterval(tInt); trun=false;
+  if(phaseIdx<phases.length-1){
+    phaseIdx++;
+    tsec=phases[phaseIdx].dur;
+    updTimerUI();
+    push(); // full sync on phase change
+    // auto-start next phase
+    if(phases[phaseIdx].dur>0){
+      trun=true;
+      tInt=setInterval(()=>{
+        if(tsec>0){tsec--;updTimerUI();}
+        else{advancePhase();}
+      },1000);
+      updTimerUI();
+    }
+  } else {
+    tsec=0; updTimerUI();
+  }
+}
+
+function skipPhase(dir){
+  clearInterval(tInt); trun=false;
+  phaseIdx=Math.max(0,Math.min(phases.length-1,phaseIdx+dir));
+  tsec=phases[phaseIdx].dur;
+  updTimerUI();
+  push(); // full sync on phase skip
+}
+
+// ── SCHEDULE UI ──
+function renderSchedule(){
+  const el=document.getElementById('phase-schedule');
+  if(!el)return;
+  el.innerHTML='';
+  phases.forEach((ph,i)=>{
+    const row=document.createElement('div');
+    row.className='ps-row'+(i===phaseIdx?' current':i<phaseIdx?' done':'');
+    const durStr=ph.dur>0?fmtSec(ph.dur):'Manual';
+    row.innerHTML=`
+      <div class="ps-name">${ph.label}</div>
+      <div class="ps-dur" id="psdur-${i}">${durStr}</div>
+      <div class="ps-edit" onclick="editDur(${i})" title="Edit duration">✎</div>`;
+    el.appendChild(row);
+  });
+}
+
+function editDur(i){
+  const ph=phases[i];
+  const cur=ph.dur>0?Math.round(ph.dur/60):0;
+  const v=prompt(`Duration for "${ph.label}" in minutes (0 = manual):`,cur);
+  if(v===null)return;
+  const mins=parseFloat(v)||0;
+  phases[i].dur=Math.round(mins*60);
+  fbSet('phases', phases);
+  if(i===phaseIdx)tsec=phases[i].dur;
+  renderSchedule();
+  updTimerUI();
+}
+
+// ── PROGRAM TAB ──
+function renderProgram(){
+  const el=document.getElementById('prog-blocks');
+  el.innerHTML='';
+  phases.forEach(ph=>{
+    if(ph.phaseKey==='getready'||ph.phaseKey==='warmup'||ph.phaseKey==='cooldown') return;
+    const prog=state.program[ph.id]||{};
+    // Ensure exercises array exists
+    if(!prog.exercises) prog.exercises=prog.e1?[prog.e1,prog.e2,prog.e3].filter(Boolean):[''];
+    const block=document.createElement('div');
+    block.className='prog-block';
+    block.dataset.phase=ph.id;
+
+    // Header
+    const hdr=document.createElement('div');
+    hdr.className='prog-phase-hdr';
+    hdr.innerHTML=`<div class="pph-name">${ph.label}</div><div class="pph-dur">${ph.dur>0?fmtSec(ph.dur):'Manual'}</div>`;
+    block.appendChild(hdr);
+
+    // Exercises section
+    const exSec=document.createElement('div');
+    exSec.className='prog-ex-section';
+    exSec.dataset.phase=ph.id;
+    const exercises=prog.exercises.length?prog.exercises:[''];
+    exercises.forEach((ex,i)=>{
+      exSec.appendChild(makeExRow(ph.id,i,ex));
+    });
+    block.appendChild(exSec);
+
+    // Add exercise button
+    const addBtn=document.createElement('button');
+    addBtn.className='prog-add-ex-btn';
+    addBtn.textContent='+ Add exercise';
+    addBtn.onclick=function(){ addExercise(ph.id); };
+    block.appendChild(addBtn);
+
+    // Cues field
+    const cuesRow=document.createElement('div');
+    cuesRow.className='prog-field-row';
+    cuesRow.innerHTML=`<div class="prog-field-lbl">Coach cues</div>
+      <textarea rows="2" placeholder="Cues, timing, technique reminders..." data-phase="${ph.id}" data-key="cues" oninput="progEdit(this)">${prog.cues||''}</textarea>`;
+    block.appendChild(cuesRow);
+
+    el.appendChild(block);
+  });
+}
+
+function makeExRow(phId, idx, val){
+  const row=document.createElement('div');
+  row.className='prog-ex-row';
+  row.dataset.phase=phId;
+  row.dataset.idx=idx;
+  row.innerHTML=`
+    <div class="prog-ex-num">${idx+1}</div>
+    <input type="text" class="prog-ex-input" placeholder="Exercise name, sets × reps..." 
+      value="${val||''}" 
+      data-phase="${phId}" data-idx="${idx}"
+      oninput="progExEdit(this)">
+    <button class="prog-ex-del" onclick="delExercise('${phId}',${idx})" title="Remove">✕</button>`;
+  return row;
+}
+
+function addExercise(phId){
+  if(!state.program[phId]) state.program[phId]={};
+  if(!state.program[phId].exercises) state.program[phId].exercises=[''];
+  state.program[phId].exercises.push('');
+  renderProgram();
+}
+
+function delExercise(phId,idx){
+  if(!state.program[phId]||!state.program[phId].exercises) return;
+  state.program[phId].exercises.splice(idx,1);
+  if(!state.program[phId].exercises.length) state.program[phId].exercises=[''];
+  renderProgram();
+}
+
+function progExEdit(el){
+  const phId=el.dataset.phase, idx=parseInt(el.dataset.idx);
+  if(!state.program[phId]) state.program[phId]={};
+  if(!state.program[phId].exercises) state.program[phId].exercises=[''];
+  state.program[phId].exercises[idx]=el.value;
+}
+
+function progEdit(el){
+  const ph=el.dataset.phase, key=el.dataset.key;
+  if(!state.program[ph])state.program[ph]={};
+  state.program[ph][key]=el.value;
+}
+
+function pushProg(){push();toast('Program updated on display!');}
+
+// ── CLASS ──
+function startClass(){
+  state.classStarted=true;
+  document.getElementById('start-btn').textContent='✅  Class is Live';
+  push(); toast('Class is live!');
+  // Advance past Get Ready into Warm-Up and start timer
+  if(phases[phaseIdx].phaseKey==='getready') advancePhase();
+  else if(!trun && phases[phaseIdx].dur>0) togTimer();
+}
+function endClass(){if(!confirm('End class?'))return;clearInterval(tInt);trun=false;state.classStarted=false;push();toast('Class ended.');}
+
+// ── PUSH ──
+function push(){
+  const _vc=document.getElementById('view-coach'); if(_vc && _vc.style.display==='none') return;
+  state.className=document.getElementById('cls-name')?document.getElementById('cls-name').value:state.className;
+  state.footerMsg=document.getElementById('footer-msg')?document.getElementById('footer-msg').value:state.footerMsg;
+  const fp=document.getElementById('footer-preview');
+  if(fp)fp.textContent=state.footerMsg;
+  fbSet('classState', state);
+}
+function pushTimer(){
+  // Only PATCH if class has started - prevents polluting Firebase before start
+  if(!state.classStarted) return;
+  const _vc=document.getElementById('view-coach'); if(_vc && _vc.style.display==='none') return;
+  state.timerDisplay=document.getElementById('timer-disp')?document.getElementById('timer-disp').textContent:state.timerDisplay;
+  try {
+    fetch(FB_URL + '/classState.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({timerDisplay: state.timerDisplay, currentPhase: state.currentPhase, phaseLabel: state.phaseLabel, nextPhaseLabel: state.nextPhaseLabel})
+    });
+  } catch(e) {}
+}
+
+
+// ── SCORES ──
+function setSB(b,el){sb=b;document.querySelectorAll('.btog').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderScores();}
+
+function renderScores(){
+  const cont=document.getElementById('score-content'); cont.innerHTML='';
+  const byTeam={};
+  state.participants.forEach(p=>{if(!byTeam[p.team])byTeam[p.team]=[];byTeam[p.team].push(p);});
+  Object.keys(byTeam).sort().forEach(tid=>{
+    const members=byTeam[tid];
+    const cap=members.find(m=>m.isCaptain)||members[0];
+    const total=Math.max(...members.map(p=>(p.b1||0)+(p.b2||0)),0);
+    const capVal=cap[sb]!==null?cap[sb]:0;
+    const anyBehind=members.some(p=>{const v=p[sb]||0;const per=p.target/2;return v>0&&v<Math.floor(per*.8);});
+    const col=TCOLORS[tid]||'#888';
+    const hdr=document.createElement('div');
+    hdr.className='team-stripe-hdr'; hdr.style.borderColor=col;
+    hdr.innerHTML=`<div class="tsh-name" style="color:${col};">Team ${tid}</div><div class="tsh-total">Total <strong>${total}</strong> rounds</div>`;
+    cont.appendChild(hdr);
+    const clr=document.createElement('div');
+    clr.className='cap-log-row'+(anyBehind?' push-warn':'');
+    clr.innerHTML=`
+      <div>
+        <div class="cl-who">Captain: ${cap.name||cap.id}</div>
+        ${anyBehind?'<div class="cl-warn">Someone is behind pace</div>':''}
+      </div>
+      <div class="cl-controls">
+        <div style="width:42px;"></div>
+        <div class="cl-val" id="cv-${tid}">${capVal}</div>
+        <button class="cl-plus" onclick="captainLog('${tid}','${sb}',1)">+</button>
+      </div>`;
+    cont.appendChild(clr);
+    members.forEach(m=>{
+      const mrow=document.createElement('div');
+      mrow.className='ovr-row';
+      mrow.innerHTML=`
+        <div><span class="ovr-mname">${m.name||m.id}</span>${m.isCaptain?'<span class="ovr-cap">★</span>':''}</div>
+        <div class="stepper">
+          <div class="sp-btn" onclick="ovScore('${m.id}','${sb}',-1)">−</div>
+          <div class="sp-val" id="ov-${m.id}">${m[sb]!=null?m[sb]:0}</div>
+          <div class="sp-btn" onclick="ovScore('${m.id}','${sb}',1)">+</div>
+        </div>`;
+      cont.appendChild(mrow);
+    });
+  });
+}
+function captainLog(tid,b,d){
+  if(d > 0){
+    // + adds to ALL team members
+    state.participants.filter(p=>p.team===tid).forEach(p=>{p[b]=Math.max(0,(p[b]||0)+1);});
+  } else {
+    // - on team row: subtract from ALL (coach override for whole team)
+    state.participants.filter(p=>p.team===tid).forEach(p=>{p[b]=Math.max(0,(p[b]||0)-1);});
+  }
+  push();renderScores();
+}
+function ovScore(pid,b,d){const p=state.participants.find(x=>x.id===pid);if(p)p[b]=Math.max(0,(p[b]||0)+d);push();renderScores();}
+
+// ── MEMBERS ──
+function renderMembers(){
+  const list=document.getElementById('members-list'); list.innerHTML='';
+  state.participants.forEach((p,i)=>{
+    const col=TCOLORS[p.team]||'#888',bg=TBGS[p.team]||'#222';
+    const div=document.createElement('div'); div.className='member-row-item';
+    div.innerHTML=`
+      <div>
+        <div class="mri-name">${p.name||p.id}
+          <span class="mri-badge" style="background:${bg};color:${col};">Team ${p.team}</span>
+          ${p.isCaptain?'<span style="font-size:.6rem;color:var(--yellow);font-weight:700;margin-left:4px;">★</span>':''}
+        </div>
+        <div class="mri-meta">Target: ${p.target}r · Last week: ${p.lastWeek}r</div>
+      </div>
+      <button class="del-btn" onclick="delMem(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+}
+function addMember(){
+  const id=document.getElementById('n-id').value.trim().toUpperCase();
+  const name=document.getElementById('n-name').value.trim();
+  const lw=parseInt(document.getElementById('n-last').value)||0;
+  const tgt=parseInt(document.getElementById('n-target').value)||0;
+  const team=document.getElementById('n-team').value;
+  const isCaptain=document.getElementById('n-role').value==='captain';
+  if(!id){alert('Enter initials');return;}
+  if(isCaptain)state.participants.forEach(p=>{if(p.team===team)p.isCaptain=false;});
+  state.participants.push({id,name:name||id,team,isCaptain,lastWeek:lw,target:tgt,b1:null,b2:null});
+  ['n-id','n-name','n-last','n-target'].forEach(x=>document.getElementById(x).value='');
+  renderMembers(); push(); toast((name||id)+' added!');
+}
+function delMem(i){state.participants.splice(i,1);renderMembers();push();}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+
+
+// ── MEMBER ──
+
+const MBR_COLORS={A:'#4da6ff',B:'#ff6688',C:'#55ee99',D:'#ffcc44',E:'#cc88ff'};
+// TBGS shared from coach
+
+// state = shared global
+let myId=localStorage.getItem('peakMemberId')||null;
+
+
+function mbr_st(score,target){
+  if(!score||score===null)return'empty';
+  const per=target/2;
+  if(score>=Math.ceil(per))return'ahead';
+  if(score>=Math.floor(per*.8))return'on-track';
+  return'behind';
+}
+
+function renderPickList(){
+  const list=document.getElementById('pick-list');
+  if(!list) return;
+  if(!state||!state.participants||!state.participants.length){
+    // Show status and start polling
+    list.innerHTML=`
+      <div style="padding:30px 20px;text-align:center;">
+        <div style="font-size:.85rem;color:var(--dim);font-weight:600;margin-bottom:12px;">Connecting to class...</div>
+        <div style="font-size:.72rem;color:#1e1e2a;font-weight:500;margin-bottom:16px;">Waiting for coach to go live</div>
+        <button onclick="retryPickList()" style="background:var(--row);border:1px solid var(--border);color:var(--soft);font-family:'Montserrat',sans-serif;font-weight:700;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:8px 20px;border-radius:6px;cursor:pointer;">Retry now</button>
+      </div>`;
+    // Auto-retry every 3 seconds
+    if(!renderPickList._timer){
+      renderPickList._timer = setInterval(function(){
+        fbGet('classState').then(function(data){
+          if(data && data.participants && data.participants.length){
+            clearInterval(renderPickList._timer);
+            renderPickList._timer = null;
+            state = normaliseState(data);
+            renderPickList();
+          }
+        });
+      }, 3000);
+    }
+    return;
+  }
+  // Have valid data - clear any retry timer
+  if(renderPickList._timer){
+    clearInterval(renderPickList._timer);
+    renderPickList._timer = null;
+  }
+  const sorted=[...state.participants].sort((a,b)=>a.team.localeCompare(b.team));
+  list.innerHTML='';
+  sorted.forEach(p=>{
+    const col=MBR_COLORS[p.team]||'#888'; const bg=TBGS[p.team]||'';
+    const row=document.createElement('div');
+    row.className='pick-row';
+    row.style.borderLeftColor=col;
+    row.innerHTML=`
+      <div class="pr-left">
+        <div class="pr-av" style="border-color:${col};color:${col};background:${col}18;">${p.id}</div>
+        <div>
+          <div class="pr-name">${p.name||p.id}</div>
+          <div class="pr-sub">${p.isCaptain?'★ Captain · ':''} Last week: ${p.lastWeek}r &nbsp;·&nbsp; Target: ${p.target}r</div>
+        </div>
+      </div>
+      <span class="pr-badge" style="background:${bg};color:${col};">Team ${p.team}</span>`;
+    row.onclick=()=>selectMember(p.id);
+    list.appendChild(row);
+  });
+}
+
+function retryPickList(){
+  fbGet('classState').then(function(data){
+    if(data){ state = normaliseState(data); }
+    renderPickList();
+  });
+}
+
+function selectMember(id){
+  myId=id; localStorage.setItem('peakMemberId',id);
+  document.getElementById('pick-screen').style.display='none';
+  document.getElementById('member-view').style.display='block';
+  // Fetch latest state before rendering so classStarted is current
+  fbGet('classState').then(function(data){
+    if(data){ state = normaliseState(data); }
+    renderMemberView();
+  });
+}
+
+function changeMember(){
+  myId=null; localStorage.removeItem('peakMemberId');
+  document.getElementById('member-view').style.display='none';
+  document.getElementById('pick-screen').style.display='block';
+  renderPickList();
+}
+
+function renderMemberView(){
+  if(!state||!myId)return;
+  const p=state.participants.find(x=>x.id===myId);
+  if(!p){changeMember();return;}
+
+  const col=MBR_COLORS[p.team]||'#888';
+  const bg=TBGS[p.team]||'';
+
+  // Connection
+  const dot=document.getElementById('cdot');
+  const ctxt=document.getElementById('ctxt');
+  if(state.classStarted){dot.className='cdot live';ctxt.textContent='Live';ctxt.style.color='var(--green)';}
+  else{dot.className='cdot wait';ctxt.textContent='Waiting';ctxt.style.color='var(--dim)';}
+
+  const notLive=document.getElementById('not-live');
+  const lc=document.getElementById('live-content');
+  if(!state.classStarted){
+    notLive.style.display='block';lc.style.display='none';
+    // Keep polling until class starts
+    if(!renderMemberView._timer){
+      renderMemberView._timer = setInterval(function(){
+        fbGet('classState').then(function(data){
+          if(data && data.classStarted){
+            clearInterval(renderMemberView._timer);
+            renderMemberView._timer = null;
+            state = normaliseState(data);
+            renderMemberView();
+          }
+        });
+      }, 3000);
+    }
+    return;
+  }
+  // Class started - clear any polling timer
+  if(renderMemberView._timer){ clearInterval(renderMemberView._timer); renderMemberView._timer = null; }
+  notLive.style.display='none'; lc.style.display='block';
+
+  const total=(p.b1||0)+(p.b2||0);
+  const pct=Math.min(100,p.target>0?Math.round(total/p.target*100):0);
+  const s1=mbr_st(p.b1,p.target), s2=mbr_st(p.b2,p.target);
+  const curPhase=state.currentPhase;
+  const teammates=state.participants.filter(x=>x.team===p.team);
+  const teamBlock=sb=>teammates.reduce((s,m)=>s+(m[sb]||0),0);
+
+  let html='';
+
+  // Greeting
+  html+=`
+    <div class="greeting-row" style="border-left-color:${col};">
+      <div class="g-name">Hey ${(p.name||p.id).split(' ')[0]}!</div>
+      <div class="g-team" style="color:${col};">Team ${p.team}</div>
+      ${p.isCaptain?'<div class="g-cap">★ You are the Captain</div>':''}
+    </div>`;
+
+  // Stats
+  html+=`<div class="sec-title">Your Stats</div>`;
+  html+=`<div class="stat-row"><div class="stat-lbl">Last week</div><div class="stat-val">${p.lastWeek} rounds</div></div>`;
+  html+=`<div class="stat-row"><div class="stat-lbl">Target today</div><div class="stat-val yellow">${p.target} rounds</div></div>`;
+
+  // Progress
+  const noteText=total===0?'Complete your blocks to track progress':total>=p.target?'Target hit — great work!':((p.target-total)+' more rounds to hit your target');
+  const noteClass=total>=p.target?'good':pct<50&&total>0?'warn':'';
+  html+=`
+    <div class="progress-row">
+      <div class="prog-header">
+        <div class="prog-lbl">Progress</div>
+        <div class="prog-frac">${total} / ${p.target}</div>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill${pct<50&&total>0?' warn':''}" style="width:${pct}%;"></div>
+      </div>
+      <div class="prog-note ${noteClass}">${noteText}</div>
+    </div>`;
+
+  // Block scores
+  html+=`<div class="sec-title">Block Scores</div>`;
+  ['b1','b2'].forEach((b,bi)=>{
+    const score=p[b];
+    const status=mbr_st(score,p.target);
+    const isCur=curPhase===b;
+    const subTxt=score===null?'not started':status==='ahead'?'on track ✓':status==='on-track'?'almost there':'needs more rounds';
+    html+=`
+      <div class="block-row${isCur?' current':''}">
+        <div class="bl-left">
+          <div class="bl-label">Block ${bi+1}${isCur?' <span style="font-size:.6rem;color:var(--yellow);font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Current</span>':''}</div>
+          <div class="bl-sub">${subTxt}</div>
+        </div>
+        <div class="block-pill ${status}">${score!=null?score:'–'}</div>
+      </div>`;
+  });
+
+  // Log rounds — captain applies to whole team, members adjust own score only
+  const logBlock=curPhase==='b1'||curPhase==='b2'?curPhase:null;
+  if(logBlock){
+    if(p.isCaptain){
+      const tTotal=teamBlock(logBlock);
+      html+=`
+        <div class="sec-title">Block ${logBlock==='b1'?'1':'2'} Rounds</div>
+        <div class="stat-row">
+          <div class="stat-lbl">Team rounds<br><span style="font-size:.65rem;color:var(--soft);font-weight:500;">+ adds for everyone · − adjusts yours only</span></div>
+          <div style="display:flex;align-items:center;gap:0;">
+            <button class="adj-btn minus" onclick="capLog(-1,'${logBlock}')">−</button>
+            <div class="adj-val">${tTotal}</div>
+            <button class="adj-btn plus" onclick="capLog(1,'${logBlock}')">+</button>
+          </div>
+        </div>`;
+    } else {
+      const myScore=p[logBlock]||0;
+      html+=`
+        <div class="sec-title">Block ${logBlock==='b1'?'1':'2'} Rounds</div>
+        <div class="stat-row">
+          <div class="stat-lbl">Team rounds<br><span style="font-size:.65rem;color:var(--soft);font-weight:500;">+ adds for everyone · − adjusts yours only</span></div>
+          <div style="display:flex;align-items:center;gap:0;">
+            <button class="adj-btn minus" onclick="capLog(-1,'${logBlock}')">−</button>
+            <div class="adj-val">${myScore}</div>
+            <button class="adj-btn plus" onclick="capLog(1,'${logBlock}')">+</button>
+          </div>
+        </div>`;
+    }
+  }
+
+  // Teammates
+  html+=`<div class="sec-title">Your Team</div>`;
+  teammates.forEach(m=>{
+    const mt=(m.b1||0)+(m.b2||0);
+    const mpct=m.target>0?Math.round(mt/m.target*100):0;
+    html+=`
+      <div class="teammate-row">
+        <div class="tm-left">
+          <div class="tm-av" style="border-color:${col};color:${col};background:${col}18;">${m.id}</div>
+          <div>
+            <div class="tm-name">${m.name||m.id}${m.id===myId?'<span class="tm-you">(you)</span>':''}</div>
+            ${m.isCaptain?'<span class="tm-cap-tag">★ Captain</span>':''}
+          </div>
+        </div>
+        <div class="tm-score">${mt} <span class="of">/ ${m.target}</span></div>
+      </div>`;
+  });
+
+  // Footer
+  html+=`
+    <div class="member-footer">
+      <div class="mf-tag">Get Ready</div>
+      <div class="mf-msg">${state.footerMsg||''}</div>
+    </div>`;
+
+  lc.innerHTML=html;
+}
+
+function capLog(delta,block){
+  if(!state||!myId)return;
+  const p=state.participants.find(x=>x.id===myId);
+  if(!p)return;
+  if(capLog._locked) return;
+  capLog._locked = true;
+  setTimeout(function(){ capLog._locked = false; }, 800);
+  if(delta > 0){
+    // + adds to ALL team members
+    state.participants.filter(x=>x.team===p.team).forEach(m=>{
+      m[block]=Math.max(0,(m[block]||0)+1);
+    });
+  } else {
+    // - subtracts from THIS member only
+    p[block]=Math.max(0,(p[block]||0)-1);
+  }
+  fbSet('classState', state);
+  renderMemberView();
+}
+
+function memberAdj(delta,block){
+  if(!state||!myId)return;
+  const p=state.participants.find(x=>x.id===myId);
+  if(!p)return;
+  if(memberAdj._locked) return;
+  memberAdj._locked = true;
+  setTimeout(function(){ memberAdj._locked = false; }, 800);
+  p[block]=Math.max(0,(p[block]||0)+delta);
+  fbSet('classState', state);
+  renderMemberView();
+}
+
+function mbr_load(){
+  if(myId && state){
+    document.getElementById('pick-screen').style.display='none';
+    document.getElementById('member-view').style.display='block';
+    renderMemberView();
+  } else {
+    renderPickList();
+    if(myId){
+      document.getElementById('pick-screen').style.display='none';
+      document.getElementById('member-view').style.display='block';
+    }
+  }
+}
+
+
+
+
+// ── TV ──
+
+let tv_prev=null, tv_cur=null;
+const phaseOrder=['getready','warmup','demo','power','b1','b2','cooldown'];
+const TV_COLORS={A:'#4da6ff',B:'#ff6688',C:'#55ee99',D:'#ffcc44',E:'#cc88ff'};
+
+function tv_st(score,target){
+  if(!score||score===null)return'empty';
+  const per=target/2;
+  if(score>=Math.ceil(per))return'ahead';
+  if(score>=Math.floor(per*.8))return'on-track';
+  return'behind';
+}
+
+function render(){
+  if(!tv_cur)return;
+  const waiting=document.getElementById('waiting');
+  const app=document.getElementById('app');
+  if(!tv_cur.classStarted){waiting.style.display='flex';app.style.display='none';return;}
+  waiting.style.display='none'; app.style.display='flex';
+
+  document.getElementById('h-name').textContent=tv_cur.className||'Endurance';
+  document.getElementById('h-phase').textContent=tv_cur.phaseLabel||'';
+  document.getElementById('tc-phase').textContent=(tv_cur.phaseLabel||'').toUpperCase();
+  document.getElementById('tc-time').textContent=tv_cur.timerDisplay||'–:––';
+  document.getElementById('tc-next').textContent=tv_cur.nextPhaseLabel?`Next: ${tv_cur.nextPhaseLabel}`:'';
+  document.getElementById('f-msg').textContent=tv_cur.footerMsg||'';
+
+  // Phase strip
+  const curPhase=tv_cur.currentPhase||'getready';
+  const ci=phaseOrder.indexOf(curPhase);
+  document.querySelectorAll('.ps').forEach(el=>{
+    el.classList.remove('active','done');
+    const mi=phaseOrder.indexOf(el.dataset.p);
+    if(mi===ci)el.classList.add('active');
+    else if(mi<ci)el.classList.add('done');
+  });
+
+  // Demo vs leaderboard
+  const isDemo=curPhase==='demo';
+  document.getElementById('leaderboard-view').style.display=isDemo?'none':'flex';
+  document.getElementById('demo-view').style.display=isDemo?'block':'none';
+
+  if(isDemo){
+    renderDemo();
+  } else {
+    renderLeaderboard();
+  }
+}
+
+function renderDemo(){
+  const prog=tv_cur.program||{};
+  const demoPhases=[
+    {id:'demo',    label:'Demo'},
+    {id:'power',   label:'Power Block'},
+    {id:'b1',      label:'Endurance 1'},
+    {id:'b2',      label:'Endurance 2'},
+  ];
+  const grid=document.getElementById('demo-grid');
+  grid.innerHTML='';
+  demoPhases.forEach(ph=>{
+    const p=prog[ph.id]||{};
+    const exes=(p.exercises||[p.e1,p.e2,p.e3].filter(Boolean)).filter(Boolean);
+    if(!exes.length) return;
+    const cell=document.createElement('div');
+    cell.className='demo-cell';
+    cell.innerHTML=`
+      <div class="demo-phase-name">${ph.label}</div>
+      <div class="demo-exercises">
+        ${exes.map((e,i)=>`<div class="demo-ex">${i+1}. ${e}</div>`).join('')}
+      </div>`;
+    grid.appendChild(cell);
+  });
+  if(!grid.children.length){
+    grid.innerHTML='<div style="padding:40px;color:#7a7a99;font-weight:700;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase;">Add program details in the coach Program tab</div>';
+  }
+}
+
+function renderLeaderboard(){
+  const ps=tv_cur.participants||[];
+  const sorted=[...ps].sort((a,b)=>a.team.localeCompare(b.team));
+  const topB1=Math.max(...ps.map(p=>p.b1||0),0);
+  const topB2=Math.max(...ps.map(p=>p.b2||0),0);
+  const container=document.getElementById('rows');
+  container.innerHTML='';
+  let lastTeam=null;
+  sorted.forEach(p=>{
+    const col=TV_COLORS[p.team]||'#888';
+    if(p.team!==lastTeam){
+      lastTeam=p.team;
+      const teamTotal=Math.max(...sorted.filter(x=>x.team===p.team).map(x=>(x.b1||0)+(x.b2||0)),0);
+      const div=document.createElement('div');
+      div.className='team-label-row';
+      div.innerHTML=`<div class="tl-stripe" style="background:${col};"></div><div class="tl-name" style="color:${col};">Team ${p.team}</div><div class="tl-total">Total <strong>${teamTotal}</strong> rounds</div>`;
+      container.appendChild(div);
+    }
+    const pp=tv_prev?(tv_prev.participants||[]).find(x=>x.id===p.id):null;
+    const c1=pp&&pp.b1!==p.b1&&p.b1!=null?'popped':'';
+    const c2=pp&&pp.b2!==p.b2&&p.b2!=null?'popped':'';
+    const s1=tv_st(p.b1,p.target),s2=tv_st(p.b2,p.target);
+    const hit=(p.b1||0)+(p.b2||0)>=p.target;
+    const isT1=topB1>0&&(p.b1||0)===topB1;
+    const isT2=topB2>0&&(p.b2||0)===topB2;
+    const row=document.createElement('div');
+    row.className='mrow';
+    row.innerHTML=`
+      <div class="mstripe" style="background:${col};"></div>
+      <div class="mav-wrap"><div class="mav" style="border-color:${col};color:${col};background:${col}1a;">${p.id}</div></div>
+      <div class="mname-wrap">
+        <div class="mname">${p.name||p.id}</div>
+        ${p.isCaptain?'<div class="mcap">★ Captain</div>':''}
+      </div>
+      <div class="cell-lw"><div class="lw-val">${p.lastWeek}</div><div class="lw-lbl">Last Week</div></div>
+      <div class="cell-tgt"><div class="tgt-val">${p.target}</div><div class="tgt-lbl">Target</div></div>
+      <div class="cell-score">
+        <div class="score-bar ${s1} ${c1}">${p.b1!=null?p.b1:'–'}</div>
+        <div class="score-sub">${p.b1!=null?'rounds':'need ~'+Math.ceil(p.target/2)}</div>
+      </div>
+      <div class="cell-score">
+        <div class="score-bar ${s2} ${c2}">${p.b2!=null?p.b2:'–'}</div>
+        <div class="score-sub">${p.b2!=null?'rounds':'need ~'+(p.target-(p.b1||0))}</div>
+      </div>
+      <div class="cell-done">${hit?'<div class="done-tick">✓</div>':'<div class="done-ring"></div>'}</div>`;
+    container.appendChild(row);
+  });
+}
+
+function tv_load(){
+  fbGet('classState').then(function(data){
+    if(data){ tv_cur=data; render(); }
+  });
+}
+
+
+// ── MODE SWITCHER ──
+const MODES = ['coach','member','tv'];
+let _listeners = [];
+
+function setMode(mode) {
+  localStorage.setItem('peakMode', mode);
+  document.getElementById('mode-picker').style.display = 'none';
+  MODES.forEach(function(m) {
+    const el = document.getElementById('view-' + m);
+    el.style.display = (m === mode) ? (m === 'tv' ? 'flex' : 'block') : 'none';
+  });
+
+  if (mode === 'member') {
+    _listeners.push(fbListen('classState', function(data, eventType) {
+      const prev_participants = state && state.participants ? JSON.stringify(state.participants) : null;
+      const prev_started = state && state.classStarted;
+      if (eventType === 'patch' && state) {
+        // Merge partial update into existing state - preserve participants
+        Object.assign(state, data);
+      } else {
+        // Full replacement
+        state = normaliseState(data);
+      }
+      const changed_participants = JSON.stringify(state && state.participants) !== prev_participants;
+      const changed_started = !!(state && (state.classStarted !== prev_started));
+      if (myId) {
+        renderMemberView();
+      } else if (changed_participants || changed_started || !prev_participants) {
+        renderPickList();
+      }
+    }));
+    fbGet('classState').then(function(data) {
+      if (data) { state = normaliseState(data); }
+      if (myId) { renderMemberView(); } else { renderPickList(); }
+    });
+  }
+
+  if (mode === 'tv') {
+    _listeners.push(fbListen('classState', function(data, eventType) {
+      tv_prev = tv_cur ? JSON.parse(JSON.stringify(tv_cur)) : null;
+      if (eventType === 'patch' && tv_cur) {
+        Object.assign(tv_cur, data);
+      } else {
+        tv_cur = normaliseState(data);
+      }
+      render();
+    }));
+    fbGet('classState').then(function(data) {
+      if (data) { tv_cur = normaliseState(data); render(); }
+    });
+  }
+
+  if (mode === 'coach') {
+    // Always init schedule/timer UI on coach load
+    renderSchedule();
+    updTimerUI();
+    // Write initial state to Firebase so members can load the pick list
+    push();
+    // Then try to restore from Firebase
+    fbGet('phases').then(function(data) {
+      if (data) {
+        if (!Array.isArray(data)) data = Object.values(data);
+        phases = data;
+        renderSchedule();
+        updTimerUI();
+      }
+    });
+    fbGet('classState').then(function(data) {
+      if (data) {
+        const nd = normaliseState(data);
+        // Restore scores only - merge b1/b2 back onto local participants by id
+        if (nd.participants && Array.isArray(nd.participants)) {
+          nd.participants.forEach(function(fp) {
+            const lp = state.participants.find(function(p){ return p.id === fp.id; });
+            if (lp) {
+              lp.b1 = fp.b1 != null ? fp.b1 : null;
+              lp.b2 = fp.b2 != null ? fp.b2 : null;
+            }
+          });
+        }
+        // Restore program content
+        if (nd.program) state.program = nd.program;
+        // Restore class started state
+        if (data.classStarted) {
+          state.classStarted = data.classStarted;
+          document.getElementById('start-btn').textContent = '✅  Class is Live';
+        }
+        renderSchedule();
+        updTimerUI();
+        push(); // write merged state back to Firebase
+      }
+    });
+  }
+}
+
+function showPicker() {
+  _listeners.forEach(function(es) { try { es.close(); } catch(e) {} });
+  _listeners = [];
+  // Clear any polling timers
+  if(renderPickList._timer){ clearInterval(renderPickList._timer); renderPickList._timer = null; }
+  if(renderMemberView._timer){ clearInterval(renderMemberView._timer); renderMemberView._timer = null; }
+  MODES.forEach(function(m) { document.getElementById('view-' + m).style.display = 'none'; });
+  document.getElementById('mode-picker').style.display = 'flex';
+  localStorage.removeItem('peakMode');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.brand, .mp-brand').forEach(function(el) {
+    let t;
+    el.addEventListener('touchstart', function() { t = setTimeout(showPicker, 1500); });
+    el.addEventListener('touchend',   function() { clearTimeout(t); });
+    el.addEventListener('mousedown',  function() { t = setTimeout(showPicker, 1500); });
+    el.addEventListener('mouseup',    function() { clearTimeout(t); });
+  });
+  const saved = localStorage.getItem('peakMode');
+  if (saved && MODES.includes(saved)) setMode(saved);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
